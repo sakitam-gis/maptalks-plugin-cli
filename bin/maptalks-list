@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+
+const logger = require('../src/logger')
+const axios = require('axios')
+const chalk = require('chalk')
+
+/**
+ * Padding.
+ */
+
+console.log()
+process.on('exit', () => {
+  console.log()
+})
+
+/**
+ * List repos.
+ */
+
+axios({
+  url: 'https://api.github.com/users/maptalks/repos',
+  headers: {
+    'User-Agent': 'maptalks-plugin-cli'
+  }
+}).then(res => {
+  const requestBody = res.data;
+  if (Array.isArray(requestBody)) {
+    console.log('  Available official templates:')
+    console.log()
+    requestBody.forEach(repo => {
+      console.log(
+        '  ' + chalk.yellow('★') +
+        '  ' + chalk.blue(repo.name) +
+        ' - ' + repo.description)
+    })
+  } else {
+    console.error(requestBody.message)
+  }
+}).catch(error => {
+  if (error) logger.error(error.message)
+});

@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+
+let pkg = require('../package.json');
+
+require('commander')
+  .version(pkg.version, '-v, --version')
+  .usage('<command> [options]')
+  .command('init', 'generate a new project from a maptalks plugin template')
+  .command('list', 'list available official templates')
+  .parse(process.argv)
+
