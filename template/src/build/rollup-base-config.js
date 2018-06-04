@@ -4,11 +4,16 @@ const json = require('rollup-plugin-json');
 const cjs = require('rollup-plugin-commonjs');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const replace = require('rollup-plugin-replace');
+{{#lint}}
+const eslintConfig = require('../.eslintrc');
 const eslint = require('rollup-plugin-eslint');
 const friendlyFormatter = require('eslint-friendly-formatter');
+{{/lint}}
+{{#scss}}
+const copy = require('rollup-plugin-copied');
+{{/scss}}
 const _package = require('../package.json');
 const { handleMinEsm, resolve } = require('./helper');
-const eslintConfig = require('../.eslintrc');
 const time = new Date();
 const year = time.getFullYear();
 const banner = `/*!\n * author: ${_package.author} 
@@ -25,6 +30,7 @@ const genConfig = (opts) => {
           include: resolve('package.json'),
           indent: ' '
         }),
+        {{#lint}}
         eslint(Object.assign({}, eslintConfig, {
           formatter: friendlyFormatter,
           exclude: [
@@ -32,6 +38,7 @@ const genConfig = (opts) => {
             resolve('node_modules/**')
           ]
         })),
+        {{/lint}}
         babel({
           exclude: [
             resolve('package.json'),
@@ -43,7 +50,14 @@ const genConfig = (opts) => {
           main: true,
           browser: true
         }),
-        cjs()
+        cjs(),
+        {{#scss}}
+        copy({
+          from: resolve('src/assets/images'),
+          to: resolve('dist/images'),
+          emitFiles: true // defaults to true
+        })
+        {{/scss}}
       ]
     },
     output: {

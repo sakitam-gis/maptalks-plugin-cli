@@ -4,7 +4,15 @@ const zlib = require('zlib');
 const uglify = require('uglify-js');
 const rollup = require('rollup');
 const configs = require('./rollup-base-config');
-const { resolve, blueString, getSize, logError, cssPlugins, checkFolderExist } = require('./helper');
+const {
+  resolve,
+  blueString,
+  getSize,
+  logError,
+  {{#scss}}
+  cssPlugins,
+  {{/scss}}
+  checkFolderExist } = require('./helper');
 
 checkFolderExist(resolve('dist'), true);
 
@@ -34,7 +42,9 @@ function build (builds) {
  */
 const buildEntry = function* ({ input, output }) {
   const isProd = /min\.js$/.test(output.file);
+  {{#scss}}
   input.plugins.splice(2, 0, cssPlugins(isProd));
+  {{/scss}}
   yield rollup.rollup(input)
     .then(bundle => bundle.generate(output))
     .then(({ code }) => {

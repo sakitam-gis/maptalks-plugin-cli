@@ -46,6 +46,10 @@ module.exports = {
       type: 'string',
       message: 'Author'
     },
+    scss: {
+      type: 'confirm',
+      message: 'Use scss for your style code?'
+    },
     lint: {
       type: 'confirm',
       message: 'Use ESLint to lint your code?'

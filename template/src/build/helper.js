@@ -1,10 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const _package = require('../package.json');
+{{#scss}}
 const scss = require('rollup-plugin-scss');
 const postcss = require('postcss');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
+{{/scss}}
 const resolve = _path => path.resolve(__dirname, '../', _path);
 /**
  * get file size
@@ -65,6 +67,8 @@ const checkFolderExist = (path, mkdir) => {
     return true
   }
 };
+
+{{#scss}}
 const cssPlugins = function (type) {
   return scss({
     output: !!type ? resolve(handleMinEsm(_package.style)) : resolve(_package.style),
@@ -73,6 +77,7 @@ const cssPlugins = function (type) {
       .then(result => result.css)
   })
 };
+{{/scss}}
 
 module.exports = {
   _package,
@@ -80,7 +85,9 @@ module.exports = {
   getSize,
   logError,
   blueString,
+  {{#scss}}
   cssPlugins,
+  {{/scss}}
   handleMinEsm,
   checkFolderExist
 };
