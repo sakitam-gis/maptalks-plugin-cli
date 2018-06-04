@@ -7,7 +7,7 @@ const validateName = require('validate-npm-package-name');
 const utils = require('./utils');
 
 /**
- * Read metadata of template
+ * Read metadata of src
  * @param {String} dir
  * @return {Object}
  */
@@ -74,7 +74,7 @@ function setValidateName (setting) {
 }
 
 /**
- * Read prompts metadata from template.
+ * Read prompts metadata from src.
  * @param {String} projectName
  * @param {String} tmpDir
  * @return {Object}

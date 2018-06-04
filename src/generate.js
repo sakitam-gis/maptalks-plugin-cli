@@ -13,7 +13,7 @@ const ask = require('./ask');
 const filesFilter = require('./filter');
 const utils = require('./utils');
 
-// support for vuejs template
+// register handlebars helper
 Handlebars.registerHelper('if_eq', function (a, b, opts) {
   return a === b
     ? opts.fn(this)
@@ -27,7 +27,7 @@ Handlebars.registerHelper('unless_eq', function (a, b, opts) {
 });
 
 /**
- * Generate a template given a `tmpDir` and `dest`.
+ * Generate a src given a `tmpDir` and `dest`.
  * @param {String} projectName
  * @param {String} tmpDir
  * @param {String} dest
@@ -37,7 +37,7 @@ Handlebars.registerHelper('unless_eq', function (a, b, opts) {
 module.exports = function (projectName, tmpDir, dest, done) {
   let metalsmith;
   let setting = getSetting(projectName, tmpDir);
-  let tplPath = path.join(tmpDir, 'template');
+  let tplPath = path.join(tmpDir, 'src');
   // register handlebars helpers
   setting.helpers && Object.keys(setting.helpers).map(function (key) {
     Handlebars.registerHelper(key, setting.helpers[key])
@@ -52,23 +52,20 @@ module.exports = function (projectName, tmpDir, dest, done) {
     isCwd: dest === process.cwd(),
     noEscape: true
   });
-  ora({
-    text: `generating project ${projectName}...`,
-  }).stopAndPersist(chalk.blue('**'));
   log.tips();
   metalsmith
     .use(askQuestions(setting))
     .use(filter(setting))
     .use(template)
     .clean(false)
-    .source('.') // start from template root instead of `./src` which is Metalsmith's default for `source`
+    .source('.') // start from src root instead of `./src` which is Metalsmith's default for `source`
     .destination(dest)
     .build(function (err) {
       log.tips();
       if (err) {
         return done(err);
       }
-      //Generated success
+      // Generated success
       ora({
         text: chalk.green(`${projectName} generated  success`)
       }).succeed();
@@ -78,27 +75,27 @@ module.exports = function (projectName, tmpDir, dest, done) {
   return data;
 };
 
-//ask user for input info
+// ask user for input info
 function askQuestions (setting) {
   return (files, metalsmith, done) => {
     ask(setting.prompts, metalsmith.metadata(), done);
   }
 }
 
-//files filter
+// files filter
 function filter (setting) {
   return (files, metalsmith, done) => {
     filesFilter(setting.filters, files, metalsmith.metadata(), done);
   }
 }
 
-//generate template
+// generate src
 function template (files, metalsmith, done) {
   let keys = Object.keys(files);
   let metadata = metalsmith.metadata();
 
   async.each(keys, (file, next) => {
-    //judge file is in node_modules directory
+    // judge file is in node_modules directory
     let inNodeModules = /node_modules/.test(file);
     let str = inNodeModules ? '' : files[file].contents.toString();
     // do not attempt to render files that do not have mustaches and is in node_modules directory
@@ -109,6 +106,7 @@ function template (files, metalsmith, done) {
       if (err) {
         return next(err);
       }
+      /* eslint-disable */
       files[file].contents = new Buffer(res);
       next();
     });

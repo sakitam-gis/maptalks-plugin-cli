@@ -4,6 +4,7 @@
  */
 
 'use strict';
+const path = require('path');
 const axios = require('axios');
 const ora = require('ora');
 const chalk = require('chalk');
@@ -12,12 +13,12 @@ const log = require('./logger');
 
 module.exports = function (repo, done) {
   let oraer = ora({
-    text: 'checking template from github.com...',
+    text: 'checking src from github.com...',
     color: "blue"
   }).start();
   // const REQUEST_URL = `https://api.github.com/users/${repoInfo[0]}/repos`;
-  const URL = `https://github.com/${repo}`;
-  axios(utils.getAuthInfo(URL)).then((res) => {
+  const URL = `https://api.github.com/users/${repo.split('/')[0]}/repos`;
+  axios.get(URL).then((res) => {
     log.tips();
     if (res.status === 200) {
       oraer.text = chalk.green('Template checked success from github.com.');
@@ -39,7 +40,7 @@ module.exports = function (repo, done) {
       oraer.fail();
       log.tips();
       if (res && res.status === 403) {
-        //api rate limit:https://developer.github.com/v3/#rate-limiting
+        // api rate limit:https://developer.github.com/v3/#rate-limiting
         log.tips(chalk.red(`     ${res.statusText}: ${res.data.message}\n\ndocumentation: ${res.data.documentation_url}`));
         log.tips();
         log.tips(`     Please set auth token to get a higher rate limit by ${chalk.blue('maptalks token')}. Check out the documentation for more details.`);

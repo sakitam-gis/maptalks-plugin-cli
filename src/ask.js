@@ -2,7 +2,6 @@
 
 let async = require('async');
 let inquirer = require('inquirer');
-let chalk = require('chalk');
 
 // Support types from prompt-for which was used before
 let promptMapping = {
@@ -18,12 +17,11 @@ let promptMapping = {
  */
 
 module.exports = function (prompts, data, done) {
-  //https://github.com/metalsmith/metalsmith/blob/master/examples/project-scaffolder/build.js#L26
+  // https://github.com/metalsmith/metalsmith/blob/master/examples/project-scaffolder/build.js#L26
   async.eachSeries(Object.keys(prompts), function (key, done) {
     promptWraper(data, key, prompts[key], done);
   }, done);
 };
-
 
 /**
  * Inquirer prompt wrapper.

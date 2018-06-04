@@ -20,10 +20,10 @@ const checkVersion = require('../src/check-version');
  * Usage.
  */
 program
-  .usage('<template-name> [project-name]')
+  .usage('<src-name> [project-name]')
   .option('-c, --clone', 'use git clone')
   .option('-o, --origin', 'set git remote origin')
-  .option('--offline', 'use cached template');
+  .option('--offline', 'use cached src');
 
 /**
  * Help.
@@ -31,15 +31,17 @@ program
 program.on('--help', function () {
   log.tips('  Examples:');
   log.tips();
-  log.tips(chalk.gray('    # create a new project with an template from github.'));
+  log.tips(chalk.gray('    # create a new project with an src from github.'));
   log.tips('    $ maptalks init maptalks/maptalks-plugin my-project');
   log.tips('    $ maptalks init maptalks/maptalks-plugin my-project -o git@github.com:xx/xxxx.git');
   log.tips();
 });
 
+/**
+ * if no args, run help
+ */
 function help () {
   program.parse(process.argv);
-  log.error(program.args);
   if (program.args.length < 1) return program.help()
 }
 
@@ -70,6 +72,9 @@ if (!hasSlash) {
   return program.help();
 }
 
+/**
+ * is has git res, set it
+ */
 function setOrigin () {
   // set origin
   try {
@@ -101,9 +106,11 @@ if (utils.isExist(projectDirPath)) {
   let index = projectName.indexOf('/');
   if (projectDirName.startsWith('/') || /^\w:/.test(projectDirName)) {
     normalizeName = projectName.substr(index).split('/')[0] || projectName.substr(index).split('/')[1];
-    normalizeName = normalizeName ? normalizeName : 'demo';
+    normalizeName = normalizeName || 'demo';
   } else if (index >= 0) {
     normalizeName = projectName.split('/')[0];
+  } else {
+    normalizeName = projectName;
   }
   if (normalizeName && normalizeName !== projectName) {
     inquirer.prompt([{
@@ -116,7 +123,6 @@ if (utils.isExist(projectDirPath)) {
         projectName = normalizeName;
         runTask();
       }
-      return;
     });
   } else {
     runTask();
@@ -150,14 +156,15 @@ function runTask () {
       log.error(`Local template ${template} not found.`);
     }
   } else {
-    let arr = template.split(path.sep);
-    if (arr.length < 2 || !arr[0] || !arr[1]) {
-      return program.help();
-    }
+    // let arr = src.split(path.sep);
+    // console.log('arr', arr, path.sep)
+    // if (arr.length < 2 || !arr[0] || !arr[1]) {
+    //   return program.help();
+    // }
     log.tips();
     log.tips(chalk.red(`Local template ${template} not found. Will check it from github.`));
     log.tips();
-    // convert template path to xxx/xxx
+    // convert src path to xxx/xxx
     template = template.split(path.sep).slice(0, 2).join('/');
     // check repo from github.com
     checkVersion(() => {
@@ -167,19 +174,21 @@ function runTask () {
 }
 
 /**
- * Download a generate from a template repo.
+ * Download a generate from a src repo.
+ *
  * @param {String} template
  */
+
 function downloadAndGenerate (template) {
-  let tmp = os.tmpdir() + '/maptalks-template-' + uuidV1();
+  const tmp = os.tmpdir() + path.sep + '.maptalks-plugin-src' + uuidV1();
   let spinner = ora({
     text: `start downloading template: ${template}`,
     color: "blue"
   }).start();
-  download(template, tmp, { clone }, (err) => {
+  download(template, tmp, { clone }, err => {
     process.on('exit', () => rm(tmp));
     if (err) {
-      //err.code/err.message;
+      // err.code/err.message;
       spinner.text = chalk.red(`Failed to download template ${template}: ${err.message.trim()}`);
       spinner.fail();
       process.exit(1);
@@ -201,5 +210,5 @@ function downloadAndGenerate (template) {
         }).join('\n'));
       }
     });
-  });
+  })
 }

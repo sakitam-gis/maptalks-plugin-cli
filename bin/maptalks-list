@@ -31,7 +31,7 @@ axios({
       console.log(
         '  ' + chalk.yellow('★') +
         '  ' + chalk.blue(repo.name) +
-        ' - ' + repo.description)
+        ' - ' + chalk.green(repo.description))
     })
   } else {
     console.error(requestBody.message)

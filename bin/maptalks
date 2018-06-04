@@ -5,7 +5,6 @@ let pkg = require('../package.json');
 require('commander')
   .version(pkg.version, '-v, --version')
   .usage('<command> [options]')
-  .command('init', 'generate a new project from a maptalks plugin template')
+  .command('init', 'generate a new project from a maptalks plugin src')
   .command('list', 'list available official templates')
-  .parse(process.argv)
-
+  .parse(process.argv);
