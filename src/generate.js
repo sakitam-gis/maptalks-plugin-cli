@@ -37,7 +37,7 @@ Handlebars.registerHelper('unless_eq', function (a, b, opts) {
 module.exports = function (projectName, tmpDir, dest, done) {
   let metalsmith;
   let setting = getSetting(projectName, tmpDir);
-  let tplPath = path.join(tmpDir, 'src');
+  let tplPath = path.join(tmpDir, 'template');
   // register handlebars helpers
   setting.helpers && Object.keys(setting.helpers).map(function (key) {
     Handlebars.registerHelper(key, setting.helpers[key])

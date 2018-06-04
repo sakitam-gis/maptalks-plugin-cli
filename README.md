@@ -1,1 +1,1 @@
-### maptalks
+### maptalks-plugin-cli
