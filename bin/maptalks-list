@@ -18,7 +18,7 @@ process.on('exit', () => {
  */
 
 axios({
-  url: 'https://api.github.com/users/maptalks/repos',
+  url: 'https://api.github.com/users/sakitam-gis/repos',
   headers: {
     'User-Agent': 'maptalks-plugin-cli'
   }
@@ -28,10 +28,12 @@ axios({
     console.log('  Available official templates:')
     console.log()
     requestBody.forEach(repo => {
-      console.log(
-        '  ' + chalk.yellow('★') +
-        '  ' + chalk.blue(repo.name) +
-        ' - ' + chalk.green(repo.description))
+      if (/maptalks-plugin-tpl/.test(repo.name)) {
+        console.log(
+          '  ' + chalk.yellow('★') +
+          '  ' + chalk.blue(repo.name) +
+          ' - ' + chalk.green(repo.description))
+      }
     })
   } else {
     console.error(requestBody.message)
