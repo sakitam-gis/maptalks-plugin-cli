@@ -1,14 +1,14 @@
 {
   "name": "maptalks-plugin-cli",
   "version": "0.0.1",
-  "description": "A simple cli scaffolding for maptalks-plugin-cli",
+  "description": "A simple cli scaffolding for maptalks plugins",
   "bin": {
     "maptalks": "bin/maptalks",
     "maptalks-init": "bin/maptalks-init"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sakitam-fdd/maptalks-plugin-cli.git"
+    "url": "git+https://github.com/sakitam-gis/maptalks-plugin-cli.git"
   },
   "keywords": [
     "maptalks",
@@ -18,9 +18,9 @@
   "author": "sakitam-fdd",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sakitam-fdd/maptalks-plugin-cli/issues"
+    "url": "https://github.com/sakitam-gis/maptalks-plugin-cli/issues"
   },
-  "homepage": "https://github.com/sakitam-fdd/maptalks-plugin-cli#readme",
+  "homepage": "https://github.com/sakitam-gis/maptalks-plugin-cli#readme",
   "main": "src/index.js",
   "scripts": {},
   "dependencies": {

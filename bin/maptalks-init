@@ -69,7 +69,7 @@ let clone = program.clone || false;
 let hasSlash = template.indexOf('/') > -1;
 let preProjectName = projectName;
 if (!hasSlash) {
-  return program.help();
+  template = `sakitam-gis/${template}`
 }
 
 /**
