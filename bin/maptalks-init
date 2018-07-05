@@ -1,214 +1,167 @@
 #!/usr/bin/env node
 
+const download = require('../src/core/download');
 const program = require('commander');
+const exists = require('fs').existsSync;
+const path = require('path');
+const ora = require('ora');
+const home = require('user-home');
+const tildify = require('tildify');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
-const path = require('path');
 const rm = require('rimraf').sync;
-const uuidV1 = require('uuid/v1');
-const ora = require('ora');
-const os = require('os');
-const download = require('download-git-repo');
-const shell = require('shelljs');
-const log = require('../src/logger');
-const checkRepos = require('../src/check-repos');
-const generate = require('../src/generate');
-const utils = require('../src/utils');
-const checkVersion = require('../src/check-version');
+const logger = require('../src/helper/logger');
+const generate = require('../src/core/generate');
+const checkVersion = require('../src/check/check-version');
+const localPath = require('../src/helper/local-path');
+const isLocalPath = localPath.isLocalPath;
+const getTemplatePath = localPath.getTemplatePath;
 
 /**
  * Usage.
  */
 program
-  .usage('<src-name> [project-name]')
-  .option('-c, --clone', 'use git clone')
-  .option('-o, --origin', 'set git remote origin')
-  .option('--offline', 'use cached src');
+  .usage('<template-name> [project-name]')
+  .option('-c, --clone <n>', 'use git clone')
+  .option('-o, --origin <n>', 'set git remote origin')
+  .option('--offline <n>', 'use cached src');
 
 /**
  * Help.
  */
-program.on('--help', function () {
-  log.tips('  Examples:');
-  log.tips();
-  log.tips(chalk.gray('    # create a new project with an src from github.'));
-  log.tips('    $ maptalks init maptalks/maptalks-plugin my-project');
-  log.tips('    $ maptalks init maptalks/maptalks-plugin my-project -o git@github.com:xx/xxxx.git');
-  log.tips();
+
+program.on('--help', () => {
+  logger.log('  Examples:');
+  logger.log();
+  logger.log(chalk.gray('    # create a new project with an official template'));
+  logger.log('    $ maptalks init maptalks-plugin-tpl-official my-project');
+  logger.log();
+  logger.log(chalk.gray('    # create a new project straight from a github template'));
+  logger.log('    $ maptalks init username/repo my-project');
+  logger.log();
+  logger.log(chalk.gray('    # create a new project straight from a git res'));
+  logger.log('    $ maptalks init -c direct:https://github.com/sakitam-gis/maptalks-plugin-tpl-official.git my-project -o git@github.com:xx/xxxx.git');
+  logger.log();
 });
 
 /**
- * if no args, run help
+ * Help.
  */
 function help () {
   program.parse(process.argv);
-  if (program.args.length < 1) return program.help()
+  if (program.args.length < 1) return program.help();
 }
-
 help();
+
+/**
+ * Settings.
+ */
+const clone = !!program.clone || false;
+const offline = !!program.offline || false;
+let rawName = (clone || offline) ? program.args[0] : program.args[1];
+let template = (clone || offline) ? (clone ? program.clone : program.offline) : program.args[0];
+template = template || program.args[0];
+const hasSlash = template.indexOf('/') > -1;
+const inPlace = !rawName || rawName === '.';
+const name = inPlace ? path.relative('../', process.cwd()) : rawName;
+const to = path.resolve(rawName || '.');
+const _links = template.split('/');
+// eslint-disable-next-line
+const tmp = path.join(home, '.maptalks-plugin-templates', _links[_links.length - 1].replace(/^\.|(\.git)$/, ''));
+if (program.offline) {
+  console.log(`> Use cached template at ${chalk.yellow(tildify(tmp))}`);
+  template = tmp
+}
 
 /**
  * Padding.
  */
 
-log.tips();
-process.on('exit', () => log.tips());
+console.log();
+process.on('exit', () => {
+  console.log()
+});
 
-/**
- * Settings.
- */
-let template = program.args[0];
-let projectDirName = program.args[1];
-if (!projectDirName || /^\w:\/?$/.test(projectDirName)) {
-  projectDirName = '.'
-}
-let origin = program.args[2];
-let projectName = projectDirName === '.' ? path.relative('../', process.cwd()) : projectDirName;
-let projectDirPath = path.resolve(projectDirName || '.');
-let clone = program.clone || false;
-let hasSlash = template.indexOf('/') > -1;
-let preProjectName = projectName;
-if (!hasSlash) {
-  template = `sakitam-gis/${template}`
-}
-
-/**
- * is has git res, set it
- */
-function setOrigin () {
-  // set origin
-  try {
-    shell.cd(projectDirPath);
-    shell.exec(`git init`, {async: false});
-    shell.exec(`git remote add origin ${origin}`, {async: false});
-    log.tips(chalk.green(`${projectName} is related to remote repo: ${origin}`));
-  } catch (e) {
-    log.tips(chalk.red(`set git remote origin faild: ${e.message}`));
-  }
-}
-
-if (utils.isExist(projectDirPath)) {
+if (inPlace || exists(to)) {
   inquirer.prompt([{
     type: 'confirm',
-    message: projectDirName === '.'
+    message: inPlace
       ? 'Generate project in current directory?'
       : 'Target directory exists. Continue?',
     name: 'ok'
-  }]).then((answers) => {
+  }]).then(answers => {
     if (answers.ok) {
-      log.tips();
-      runTask();
+      run();
     }
-  });
+  }).catch(logger.fatal);
 } else {
-  // convert projectName(eg: xxx/, xxx/sss, /xxx/sss, c:/xxx/sss) to xxx
-  let normalizeName = '';
-  let index = projectName.indexOf('/');
-  if (projectDirName.startsWith('/') || /^\w:/.test(projectDirName)) {
-    normalizeName = projectName.substr(index).split('/')[0] || projectName.substr(index).split('/')[1];
-    normalizeName = normalizeName || 'demo';
-  } else if (index >= 0) {
-    normalizeName = projectName.split('/')[0];
-  } else {
-    normalizeName = projectName;
-  }
-  if (normalizeName && normalizeName !== projectName) {
-    inquirer.prompt([{
-      type: 'confirm',
-      message: `Your project's name will be created as ${normalizeName}`,
-      name: 'ok'
-    }]).then((answers) => {
-      if (answers.ok) {
-        log.tips();
-        projectName = normalizeName;
-        runTask();
-      }
-    });
-  } else {
-    runTask();
-  }
+  run();
 }
 
-function runTask () {
-  let isLocalTemplate = utils.isLocalTemplate(template);
-  if (isLocalTemplate) {
-    let templatePath = template.startsWith('/') || /^\w:/.test(template)
-      ? template : path.normalize(path.join(process.cwd(), template));
-    if (utils.isExist(templatePath)) {
-      log.success(`Template is from ${templatePath}`);
-      log.tips();
-      generate(projectName, templatePath, projectDirPath, (err, msg = "") => {
-        if (err) {
-          log.error(`Generated error: ${err.message.trim()}`);
-        }
-        if (origin && /\.git$/.test(origin)) {
-          setOrigin();
-        }
-        if (msg) {
-          let re = /{{[^{}]+}}/g;
-          log.tips('\n' + msg.replace(re, projectName).split(/\r?\n/g).map(function (line) {
-            return '   ' + line
-          }).join('\n'));
-        }
-      });
+/**
+ * Check, download and generate the project.
+ */
+function run () {
+  // check if template is local
+  if (isLocalPath(template)) {
+    const templatePath = getTemplatePath(template);
+    if (exists(templatePath)) {
+      generate(name, templatePath, to, err => {
+        if (err) logger.fatal(err);
+        logger.success('Generated "%s".', name);
+      })
     } else {
-      log.tips();
-      log.error(`Local template ${template} not found.`);
+      logger.fatal('Local template "%s" not found.', template);
     }
   } else {
-    // let arr = src.split(path.sep);
-    // console.log('arr', arr, path.sep)
-    // if (arr.length < 2 || !arr[0] || !arr[1]) {
-    //   return program.help();
-    // }
-    log.tips();
-    log.tips(chalk.red(`Local template ${template} not found. Will check it from github.`));
-    log.tips();
-    // convert src path to xxx/xxx
-    template = template.split(path.sep).slice(0, 2).join('/');
-    // check repo from github.com
     checkVersion(() => {
-      checkRepos(template, downloadAndGenerate);
-    });
+      if (!hasSlash && !clone) {
+        // use official templates
+        const officialTemplate = `sakitam-gis/${template}`;
+        if (template.indexOf('#') !== -1) {
+          downloadAndGenerate(officialTemplate);
+        } else {
+          downloadAndGenerate(officialTemplate);
+        }
+      } else { // 有斜线分开说明给定的为 username/repo
+        downloadAndGenerate(template);
+      }
+    })
   }
 }
 
 /**
- * Download a generate from a src repo.
- *
+ * Download a generate from a template repo.
  * @param {String} template
  */
-
 function downloadAndGenerate (template) {
-  const tmp = os.tmpdir() + path.sep + '.maptalks-plugin-src' + uuidV1();
-  let spinner = ora({
-    text: `start downloading template: ${template}`,
-    color: "blue"
-  }).start();
-  download(template, tmp, { clone }, err => {
-    process.on('exit', () => rm(tmp));
-    if (err) {
-      // err.code/err.message;
-      spinner.text = chalk.red(`Failed to download template ${template}: ${err.message.trim()}`);
-      spinner.fail();
-      process.exit(1);
+  const spinner = ora({
+    text: 'downloading template',
+    spinner: {
+      "interval": 80,
+      "frames": [
+        "⣾",
+        "⣽",
+        "⣻",
+        "⢿",
+        "⡿",
+        "⣟",
+        "⣯",
+        "⣷"
+      ]
     }
-    spinner.text = chalk.green(`${template} downloaded success`);
-    spinner.succeed();
-    log.tips();
-    generate(projectName, tmp, projectDirPath, (err, msg = "") => {
-      if (err) {
-        log.error(`Generated error: ${err.message.trim()}`);
-      }
-      if (origin && /\.git$/.test(origin)) {
-        setOrigin();
-      }
-      if (msg) {
-        let re = /{{[^{}]+}}/g;
-        log.tips('\n' + msg.replace(re, preProjectName).split(/\r?\n/g).map(function (line) {
-          return '   ' + line
-        }).join('\n'));
-      }
-    });
+  });
+  spinner.start();
+  // Remove if local template exists
+  if (exists(tmp)) rm(tmp);
+  download(template, tmp, {
+    clone: clone
+  }, function (err) {
+    spinner.stop();
+    if (err) logger.fatal('Failed to download repo ' + template + ': ' + err.message.trim());
+    generate(name, tmp, to, err => {
+      if (err) logger.fatal(err);
+      logger.success('Generated "%s".', name)
+    })
   })
 }

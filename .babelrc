@@ -1,8 +1,0 @@
-{
-  "env": {
-    "node": true,
-    "development": {
-      "presets": ["es2015", "stage-2"]
-    }
-  }
-}

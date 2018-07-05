@@ -1,22 +1,68 @@
 #!/usr/bin/env node
+const program = require('commander');
+const { log, fatal } = require('../src/helper/logger');
+const axios = require('axios');
+const chalk = require('chalk');
+const ora = require('ora');
 
-const logger = require('../src/logger')
-const axios = require('axios')
-const chalk = require('chalk')
+program
+  .option('-p, --prefix <n>', 'template repo prefix');
+
+/**
+ * Help.
+ */
+program.on('--help', () => {
+  log();
+  log(chalk.yellow(`If no prefix is specified, the maptalks-plugin-tpl is the default query.`));
+  log();
+  log();
+  log('    $ sakitam list -p maptalks-plugin-tpl');
+  log();
+});
 
 /**
  * Padding.
  */
-
-console.log()
+log();
 process.on('exit', () => {
-  console.log()
-})
+  log()
+});
 
 /**
- * List repos.
+ * Help.
  */
+function help () {
+  program.parse(process.argv);
+}
+help();
 
+const _tplfix = !!program.prefix || false;
+const prefix = (_tplfix ? program.prefix : '') || 'maptalks-plugin-tpl';
+if (program.args.length < 1 && !prefix) {
+  program.help();
+}
+
+const spinner = ora({
+  text: 'loading...',
+  spinner: {
+    "interval": 80,
+    "frames": [
+      "🕛 ",
+      "🕐 ",
+      "🕑 ",
+      "🕒 ",
+      "🕓 ",
+      "🕔 ",
+      "🕕 ",
+      "🕖 ",
+      "🕗 ",
+      "🕘 ",
+      "🕙 ",
+      "🕚 "
+    ]
+  }
+});
+spinner.start();
 axios({
   url: 'https://api.github.com/users/sakitam-gis/repos',
   headers: {
@@ -25,11 +71,12 @@ axios({
 }).then(res => {
   const requestBody = res.data;
   if (Array.isArray(requestBody)) {
-    console.log('  Available official templates:')
-    console.log()
+    spinner.succeed(`Available official templates:`);
+    log('  ');
+    log();
     requestBody.forEach(repo => {
-      if (/maptalks-plugin-tpl/.test(repo.name)) {
-        console.log(
+      if (new RegExp(prefix).test(repo.name)) {
+        log(
           '  ' + chalk.yellow('★') +
           '  ' + chalk.blue(repo.name) +
           ' - ' + chalk.green(repo.description))
@@ -39,5 +86,6 @@ axios({
     console.error(requestBody.message)
   }
 }).catch(error => {
-  if (error) logger.error(error.message)
+  spinner.fail('query error!');
+  if (error) fatal(error.message)
 });
