@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/sakitam-gis/maptalks-plugin-cli.svg?branch=master)](https://www.travis-ci.org/sakitam-gis/maptalks-plugin-cli)
 [![NPM downloads](https://img.shields.io/npm/dm/maptalks-plugin-cli.svg)](https://npmjs.org/package/maptalks-plugin-cli)
 [![Npm package](https://img.shields.io/npm/v/maptalks-plugin-cli.svg)](https://www.npmjs.org/package/maptalks-plugin-cli)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/sakitam-gis/maptalks-plugin-cli/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/sakitam-gis/maptalks-plugin-cli/master/LICENSE) [![Greenkeeper badge](https://badges.greenkeeper.io/sakitam-gis/maptalks-plugin-cli.svg)](https://greenkeeper.io/)
 
 ## Quickstart
 
